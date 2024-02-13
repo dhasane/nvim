@@ -1,8 +1,20 @@
--- Set <space> as the leader key
--- See `:help mapleader`
---  NOTE: Must happen before plugins are required (otherwise wrong leader will be used)
-vim.g.mapleader = ' '
-vim.g.maplocalleader = ' '
+--
+-- ███╗   ██╗██╗   ██╗██╗███╗   ███╗
+-- ████╗  ██║██║   ██║██║████╗ ████║
+-- ██╔██╗ ██║██║   ██║██║██╔████╔██║
+-- ██║╚██╗██║╚██╗ ██╔╝██║██║╚██╔╝██║
+-- ██║ ╚████║ ╚████╔╝ ██║██║ ╚═╝ ██║
+-- ╚═╝  ╚═══╝  ╚═══╝  ╚═╝╚═╝     ╚═╝
+--
+
+require("opts")
+require("keymaps")
+
+PLUGINS_TO_LOAD = {}
+
+function PLUGIN_LOADER(plugin_config)
+  for _,v in pairs(plugin_config) do table.insert(PLUGINS_TO_LOAD, v) end
+end
 
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    https://github.com/folke/lazy.nvim
@@ -20,19 +32,11 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
--- [[ Configure plugins ]]
--- NOTE: Here is where you install your plugins.
---  You can configure plugins using the `config` key.
---
---  You can also configure plugins after the setup call,
---    as they will be available in your neovim runtime.
-require('lazy').setup({
-  -- NOTE: First, some plugins that don't require any configuration
+PLUGIN_LOADER(require("plugins.git"))
+PLUGIN_LOADER(require("plugins.lsp"))
+PLUGIN_LOADER(require("plugins.visual"))
 
-  -- Git related plugins
-  'tpope/vim-fugitive',
-  'tpope/vim-rhubarb',
-
+PLUGIN_LOADER({
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
   {
@@ -81,7 +85,6 @@ require('lazy').setup({
       'folke/neodev.nvim',
     },
   },
-
   {
     -- Autocompletion
     'hrsh7th/nvim-cmp',
@@ -98,106 +101,8 @@ require('lazy').setup({
       'rafamadriz/friendly-snippets',
     },
   },
-
   -- Useful plugin to show you pending keybinds.
   { 'folke/which-key.nvim', opts = {} },
-  {
-    -- Adds git related signs to the gutter, as well as utilities for managing changes
-    'lewis6991/gitsigns.nvim',
-    opts = {
-      -- See `:help gitsigns.txt`
-      signs = {
-        add = { text = '+' },
-        change = { text = '~' },
-        delete = { text = '_' },
-        topdelete = { text = '‾' },
-        changedelete = { text = '~' },
-      },
-      on_attach = function(bufnr)
-        local gs = package.loaded.gitsigns
-
-        local function map(mode, l, r, opts)
-          opts = opts or {}
-          opts.buffer = bufnr
-          vim.keymap.set(mode, l, r, opts)
-        end
-
-        -- Navigation
-        map({ 'n', 'v' }, ']c', function()
-          if vim.wo.diff then
-            return ']c'
-          end
-          vim.schedule(function()
-            gs.next_hunk()
-          end)
-          return '<Ignore>'
-        end, { expr = true, desc = 'Jump to next hunk' })
-
-        map({ 'n', 'v' }, '[c', function()
-          if vim.wo.diff then
-            return '[c'
-          end
-          vim.schedule(function()
-            gs.prev_hunk()
-          end)
-          return '<Ignore>'
-        end, { expr = true, desc = 'Jump to previous hunk' })
-
-        -- Actions
-        -- visual mode
-        map('v', '<leader>hs', function()
-          gs.stage_hunk { vim.fn.line '.', vim.fn.line 'v' }
-        end, { desc = 'stage git hunk' })
-        map('v', '<leader>hr', function()
-          gs.reset_hunk { vim.fn.line '.', vim.fn.line 'v' }
-        end, { desc = 'reset git hunk' })
-        -- normal mode
-        map('n', '<leader>hs', gs.stage_hunk, { desc = 'git stage hunk' })
-        map('n', '<leader>hr', gs.reset_hunk, { desc = 'git reset hunk' })
-        map('n', '<leader>hS', gs.stage_buffer, { desc = 'git Stage buffer' })
-        map('n', '<leader>hu', gs.undo_stage_hunk, { desc = 'undo stage hunk' })
-        map('n', '<leader>hR', gs.reset_buffer, { desc = 'git Reset buffer' })
-        map('n', '<leader>hp', gs.preview_hunk, { desc = 'preview git hunk' })
-        map('n', '<leader>hb', function()
-          gs.blame_line { full = false }
-        end, { desc = 'git blame line' })
-        map('n', '<leader>hd', gs.diffthis, { desc = 'git diff against index' })
-        map('n', '<leader>hD', function()
-          gs.diffthis '~'
-        end, { desc = 'git diff against last commit' })
-
-        -- Toggles
-        map('n', '<leader>tb', gs.toggle_current_line_blame, { desc = 'toggle git blame line' })
-        map('n', '<leader>td', gs.toggle_deleted, { desc = 'toggle git show deleted' })
-
-        -- Text object
-        map({ 'o', 'x' }, 'ih', ':<C-U>Gitsigns select_hunk<CR>', { desc = 'select git hunk' })
-      end,
-    },
-  },
-
-  {
-    'morhetz/gruvbox',
-    priority = 1000,
-    config = function()
-      vim.cmd.colorscheme 'gruvbox'
-    end,
-  },
-
-  {
-    -- Set lualine as statusline
-    'nvim-lualine/lualine.nvim',
-    -- See `:help lualine.txt`
-    opts = {
-      options = {
-        icons_enabled = false,
-        theme = 'gruvbox',
-        component_separators = '|',
-        section_separators = '',
-      },
-    },
-  },
-
   {
     -- Add indentation guides even on blank lines
     'lukas-reineke/indent-blankline.nvim',
@@ -229,6 +134,11 @@ require('lazy').setup({
         end,
       },
     },
+    config = function()
+      Maps("<leader>", 'n', {
+        {'E', ':Telescope find_files'},
+      })
+    end,
   },
 
   {
@@ -265,18 +175,6 @@ require('lazy').setup({
       })
     end,
   },
-  {
-    "NeogitOrg/neogit",
-    dependencies = {
-      "nvim-lua/plenary.nvim",         -- required
-      "sindrets/diffview.nvim",        -- optional - Diff integration
-
-      -- Only one of these is needed, not both.
-      "nvim-telescope/telescope.nvim", -- optional
-      "ibhagwan/fzf-lua",              -- optional
-    },
-    config = true
-  }
 
   -- NOTE: Next Step on Your Neovim Journey: Add/Configure additional "plugins" for kickstart
   --       These are some example plugins that I've included in the kickstart repository.
@@ -291,7 +189,9 @@ require('lazy').setup({
   --
   --    For additional information see: https://github.com/folke/lazy.nvim#-structuring-your-plugins
   -- { import = 'custom.plugins' },
-}, {})
+})
+
+require('lazy').setup(PLUGINS_TO_LOAD, {})
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -510,50 +410,6 @@ vim.defer_fn(function()
   }
 end, 0)
 
--- [[ Configure LSP ]]
---  This function gets run when an LSP connects to a particular buffer.
-local on_attach = function(_, bufnr)
-  -- NOTE: Remember that lua is a real programming language, and as such it is possible
-  -- to define small helper and utility functions so you don't have to repeat yourself
-  -- many times.
-  --
-  -- In this case, we create a function that lets us more easily define mappings specific
-  -- for LSP related items. It sets the mode, buffer and description for us each time.
-  local nmap = function(keys, func, desc)
-    if desc then
-      desc = 'LSP: ' .. desc
-    end
-
-    vim.keymap.set('n', keys, func, { buffer = bufnr, desc = desc })
-  end
-
-  nmap('<leader>rn', vim.lsp.buf.rename, '[R]e[n]ame')
-  nmap('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
-
-  nmap('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
-  nmap('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
-  nmap('gI', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
-  nmap('<leader>D', require('telescope.builtin').lsp_type_definitions, 'Type [D]efinition')
-  nmap('<leader>ds', require('telescope.builtin').lsp_document_symbols, '[D]ocument [S]ymbols')
-  nmap('<leader>ws', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[W]orkspace [S]ymbols')
-
-  -- See `:help K` for why this keymap
-  nmap('K', vim.lsp.buf.hover, 'Hover Documentation')
-  -- nmap('<C-K>', vim.lsp.buf.signature_help, 'Signature Documentation')
-
-  -- Lesser used LSP functionality
-  nmap('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
-  nmap('<leader>wa', vim.lsp.buf.add_workspace_folder, '[W]orkspace [A]dd Folder')
-  nmap('<leader>wr', vim.lsp.buf.remove_workspace_folder, '[W]orkspace [R]emove Folder')
-  nmap('<leader>wl', function()
-    print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-  end, '[W]orkspace [L]ist Folders')
-
-  -- Create a command `:Format` local to the LSP buffer
-  vim.api.nvim_buf_create_user_command(bufnr, 'Format', function(_)
-    vim.lsp.buf.format()
-  end, { desc = 'Format current buffer with LSP' })
-end
 
 -- document existing key chains
 require('which-key').register {
@@ -573,11 +429,6 @@ require('which-key').register({
   ['<leader>h'] = { 'Git [H]unk' },
 }, { mode = 'v' })
 
--- mason-lspconfig requires that these setup functions are called in this order
--- before setting up the servers.
-require('mason').setup()
-require('mason-lspconfig').setup()
-
 -- Enable the following language servers
 --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
 --
@@ -586,48 +437,6 @@ require('mason-lspconfig').setup()
 --
 --  If you want to override the default filetypes that your language server will attach to you can
 --  define the property 'filetypes' to the map in question.
-local servers = {
-  -- clangd = {},
-  -- gopls = {},
-  -- pyright = {},
-  -- rust_analyzer = {},
-  -- tsserver = {},
-  -- html = { filetypes = { 'html', 'twig', 'hbs'} },
-
-  lua_ls = {
-    Lua = {
-      workspace = { checkThirdParty = false },
-      telemetry = { enable = false },
-      -- NOTE: toggle below to ignore Lua_LS's noisy `missing-fields` warnings
-      -- diagnostics = { disable = { 'missing-fields' } },
-    },
-  },
-}
-
--- Setup neovim lua configuration
-require('neodev').setup()
-
--- nvim-cmp supports additional completion capabilities, so broadcast that to servers
-local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities = require('cmp_nvim_lsp').default_capabilities(capabilities)
-
--- Ensure the servers above are installed
-local mason_lspconfig = require 'mason-lspconfig'
-
-mason_lspconfig.setup {
-  ensure_installed = vim.tbl_keys(servers),
-}
-
-mason_lspconfig.setup_handlers {
-  function(server_name)
-    require('lspconfig')[server_name].setup {
-      capabilities = capabilities,
-      on_attach = on_attach,
-      settings = servers[server_name],
-      filetypes = (servers[server_name] or {}).filetypes,
-    }
-  end,
-}
 
 -- [[ Configure nvim-cmp ]]
 -- See `:help cmp`
@@ -691,181 +500,6 @@ function ReloadConfig()
   dofile(vim.env.MYVIMRC)
   vim.notify("Nvim configuration reloaded!", vim.log.levels.INFO)
 end
-
-function Maps(base, mode, keymaps)
-  local map = vim.keymap.set
-
-  for i, keymap in ipairs(keymaps) do
-    local keybind = keymap[1]
-    local action = keymap[2]
-    -- print(i, keybind, type(keybind), action, type(action))
-
-    if type(action) == "table" then
-      -- print('base:', base .. ' ' .. keybind)
-      Maps(base .. keybind, mode, action)
-    else
-      local opts = keymap[3]
-
-      if keybind == nil then
-        print("keybind is nil")
-      elseif action == nil then
-        print("command is nil")
-      else
-        map(mode, base .. keybind, action .. '<CR>', opts)
-      end
-    end
-  end
-end
-
--- function BaseMaps(modes, keymaps)
---   local map = vim.keymap.set
--- 
---   for i, keymap in ipairs(keymaps) do
---     local keybind = keymap[1]
---     local command = keymap[2]
---     local opts = keymap[3]
--- 
---     for j, mode in ipairs(modes) do
---       if keybind == nil then
---         print("keybind is nil")
---       elseif command == nil then
---         print("command is nil")
---       else
---         map(mode, keybind, command .. '<CR>', opts)
---       end
---     end
---   end
--- end
-
-local map = vim.keymap.set
-map('n', '<C-x><C-c>', ':qa<CR>')
-
-map('n', '<C-s>', ':write<CR>')
-map('i', '<C-s>', '<esc><esc>:write<CR>')
-map('v', '<C-s>', '<esc><esc>:write<CR>')
-
-map('t', '<C-h>', '<C-\\><C-n><C-w>h<CR>')
-map('t', '<C-j>', '<C-\\><C-n><C-w>j<CR>')
-map('t', '<C-k>', '<C-\\><C-n><C-w>k<CR>')
-map('t', '<C-l>', '<C-\\><C-n><C-w>l<CR>')
-
-map('v', '<C-q>', '<esc>:quit')
-
-Maps("<leader>", 'n', {
-  {'e', ':Telescope find_files'},
-  {'g', ':Neogit'},
-  {'<TAB>', {
-    {'c', ':tabnew %'},
-    {'q', ':tabclose'},
-    {'h', ':tabprevious'},
-    {'l', ':tabnext'}
-  }},
-  {'w', '<C-w>'},
-  {
-    'o', { -- " verificacion de escritura
-      {'<leader>oe', ':setlocal spell! spelllang=es<CR>'},
-      {'<leader>oi', ':setlocal spell! spelllang=en_us<CR>?'},
-      {'<leader>ot', ':setlocal spell! spelllang=es,en_us<CR>'}
-    }
-  },
-  -- " abrir terminal
-  {'.', '<esc>:vsp <cr> :term <cr>'},
-  {'{', '<esc>va}zf' }
-})
-
-
--- BaseMaps({
--- 
--- })
-
-Maps('<leader>\'', 'n', {
-  {'e', ':execute "edit " . $MYVIMRC'},
-  -- {'s', ' :execute "source " . $MYVIMRC<CR>'},
-  {'s', ':lua ReloadConfig'},
-})
-
--- " correr la macro en q, que aveces sin querer la sobreescribo
-map('n', '<Leader><Space>', '@q')
-
--- " mostrar las marcas
-map('n', '?', ':marks <cr>')
-
--- " para solo mostrar las marcas dentro del archivo
-map('n', '<Leader>', ':marks abcdefghijklmnopqrstuvwxyz<cr>:')
-
--- " noremap <Leader>. :call TermToggle(25) <cr>
-
--- " ver arbol de archivos
-map('n', '<Leader>t', ':Lexplore<cr>')
-map('n', '<Leader>c', ':callCompilar()<cr>')
-
--- " compilar con make y mostrar salida
-map('n', '<Leader><C-m>', ':copen<cr>')
--- " nnoremap <Leader>m :lopen 5 <cr>
-
--- " muestra errores
-map('n', '<Leader>m', ':botright lwindow 5<cr>')
-
--- "mover entre buffers
-map('n', '<Leader>j', '<esc>:bp<cr>')
-map('n', '<Leader>k', '<esc>:bn<cr>')
--- " jetpack
--- " noremap <Leader>l :ls<CR>:b<space>
-map('n', '<Leader>l', ':FZFBuffer<cr>')
-
--- " cortes
--- " <tab>t oficialmente sirve para ir a la ventana superior izquierda, pero no se si lo use mucho
--- " me gusta mas la funcion que yo le tengo :D
-map('n', '<tab>t', '<esc>:tabnew %<cr>')
-map('n', '<tab>', '<C-w>')
--- " noremap <Leader>wv <esc>:vsp<cr> " esto se puede con tab tab
--- " noremap <Leader>ws <esc>:sp<cr> " esto se puede con tab v
--- " noremap <Leader>wt <esc>:tabnew %<cr>
-
--- " final funciones con <Leader> -----------------------------------
-
-map('n', 'gb', 'gT')
--- " quitar modo Ex - que ademas ni idea para que sirve :v
-map('n', 'Q', '<nop>')
-
--- " guardar
-map('n', '<C-s>', ':w<cr>')
-map('i', '<C-s>', '<esc><esc>:w<cr>')
-map('v', '<C-s>', '<esc><esc>:w<cr>')
-
--- " salir
-map('n', '<C-q>', '<esc>:close<cr>')
-
-map('v', '<tab>', '>gv')
-map('v', '<S-tab>', '<gv')
-
--- " nnoremap <tab> >>
--- " nnoremap <S-tab> <<
-
--- " copiar y pegar
-map('v', '<C-c>', '"*y :let @+=@* <cr>')
-map('n', '<C-c>', '"*yy:let @+=@*<cr>')
-map('i', '<C-c>', '<esc>"*yy:let @+=@*<cr>a')
--- "nnoremap <C-p> "+P
--- " pegar en insert
-map('i', '<C-p>', '<esc>"+pa')
-map('i', '<C-v>', '<esc>"+pa')
-
--- " copiar hasta el final de linea
-map('n', 'Y', 'y$')
-
--- " mover entre splits
-map('n', '<C-h>', '<C-w>h')
-map('n', '<C-j>', '<C-w>j')
-map('n', '<C-k>', '<C-w>k')
-map('n', '<C-l>', '<C-w>l')
-
-map('n', 'j', 'gj')
-map('n', 'k', 'gk')
-map('n', '<DOWN>', 'gj')
-map('n', '<UP>', 'gk')
-
-map('n', 'gf', ':edit <cfile><cr>')
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
