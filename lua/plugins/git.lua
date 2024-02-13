@@ -88,6 +88,17 @@ return {
        "nvim-telescope/telescope.nvim", -- optional
        "ibhagwan/fzf-lua",              -- optional
     },
-    config = true
-  }
+    config = function()
+      local neogit = require("neogit")
+
+      neogit.setup {
+        -- Hides the hints at the top of the status buffer
+        disable_hint = true,
+        graph_style = "unicode"
+      }
+      Maps("<leader>", 'n', {
+        {'g', neogit.open},
+      })
+    end
+  },
 }

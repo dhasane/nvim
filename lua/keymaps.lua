@@ -8,20 +8,29 @@ function Maps(base, mode, keymaps)
   for _, keymap in ipairs(keymaps) do
     local keybind = keymap[1]
     local action = keymap[2]
-    -- print(i, keybind, type(keybind), action, type(action))
+    local opts = keymap[3]
 
-    if type(action) == "table" then
-      -- print('base:', base .. ' ' .. keybind)
-      Maps(base .. keybind, mode, action)
+
+    if keybind == nil then
+      print("keybind is nil")
+    elseif action == nil then
+      print("command is nil")
     else
-      local opts = keymap[3]
+      local key = base .. keybind
 
-      if keybind == nil then
-        print("keybind is nil")
-      elseif action == nil then
-        print("command is nil")
+      if type(action) == "table" then
+        -- require('which-key').register {
+        --   [key] = { name = opts.desc, _ = 'which_key_ignore' },
+        -- }
+        Maps(key, mode, action)
       else
-        map(mode, base .. keybind, action .. '<CR>', opts)
+        local command
+        if type(action) == 'function' then
+          command = action
+        else
+          command = action .. '<CR>'
+        end
+        map(mode, key, command, opts)
       end
     end
   end
@@ -42,27 +51,26 @@ map("n", '<Esc>', '<Esc>:nohlsearch<CR>')
 map({'v', 'n'}, '<C-q>', '<esc>:close<CR>')
 
 Maps("<leader>", 'n', {
-    {'g', ':Neogit'},
-    {'<TAB>', {
-        {'c', ':tabnew %'},
-        {'q', ':tabclose'},
-        {'h', ':tabprevious'},
-        {'l', ':tabnext'}
-    }},
-    {'w', '<c-w>'},
-    {
-        'o', { -- " verificacion de escritura
-            {'e', ':setlocal spell! spelllang=es'},
-            {'i', ':setlocal spell! spelllang=en_us'},
-            {'t', ':setlocal spell! spelllang=es,en_us'}
-        }
-    },
-    -- " abrir terminal
-    {'.', '<esc>:vsp <cr> :term <cr>'},
-    {'{', '<esc>va}zf'},
-    {'t', ':Lexplore'},
-    {'c', ':callCompilar()'},
-    {'<Leader>m', ':botright lwindow 5'}
+  {'<TAB>', {
+    {'c', ':tabnew %'},
+    {'q', ':tabclose'},
+    {'h', ':tabprevious'},
+    {'l', ':tabnext'}
+  }},
+  {'w', '<c-w>'},
+  {
+    'o', { -- " verificacion de escritura
+      {'e', ':setlocal spell! spelllang=es'},
+      {'i', ':setlocal spell! spelllang=en_us'},
+      {'t', ':setlocal spell! spelllang=es,en_us'}
+    }
+  },
+  -- " abrir terminal
+  {'.', '<esc>:vsp <cr> :term <cr>'},
+  {'{', '<esc>va}zf'},
+  {'t', ':Lexplore'},
+  {'c', ':callCompilar()'},
+  {'<Leader>m', ':botright lwindow 5'},
 })
 
 Maps('<leader>\'', 'n', {

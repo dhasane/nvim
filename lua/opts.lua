@@ -19,14 +19,6 @@ opt.ruler = true
 opt.path:append(".**")
 opt.spellsuggest = '10' -- muestra las primeras 10 palabras recomendadas
 
--- " esto arregla el problema de C-direccion para tmux
--- if exists('$TMUX')
---     execute "set <xUp>=\e[1;*A"
---     execute "set <xDown>=\e[1;*B"
---     execute "set <xRight>=\e[1;*C"
---     execute "set <xLeft>=\e[1;*D"
--- endif
-
 -- filetype plugin on
 
 -- enables codefolding"
@@ -43,7 +35,7 @@ opt.wildmenu = true
 opt.wildmode = { 'longest', 'full' }
 vim.opt.wildignore = {'*/cache/*', '*/tmp/*'}
 
-vim.opt.listchars = { 
+vim.opt.listchars = {
     -- eol = '↲', 
     tab = '»·', -- tab:-\ 
     trail = '·' -- trail:¬∑
@@ -74,13 +66,15 @@ opt.go=a
 opt.foldmethod = 'manual'  -- Lets you hide sections of code
 -- opt.foldmethod=indent -- Lets you hide sections of code
 
-opt.clipboard=unnamedplus  -- en para el clipboard, en teoria
+opt.clipboard = 'unnamedplus'  -- en para el clipboard, en teoria
+-- vim.o.clipboard = 'unnamedplus'
 
 -- busqueda
 opt.ignorecase = true -- make searches case insensitive
 opt.hlsearch = true -- highlight matching search strings
 
-opt.completeopt = menuone
+opt.completeopt = 'menuone,noselect' -- Set completeopt to have a better completion experience
+
 opt.completeopt:append('preview')
 
 vim.g['netrw_liststyle'] = 3
@@ -107,3 +101,8 @@ opt.signcolumn = 'yes'
 -- opt.completeopt+=preview
 -- opt.completeopt+=menu,longest,menuone,preview -- TODO -- TODO
 -- opt.omnifunc=syntaxcomplete#Complete -- TODO
+
+
+-- Decrease update time
+vim.o.updatetime = 250
+vim.o.timeoutlen = 300
