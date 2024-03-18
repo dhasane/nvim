@@ -29,32 +29,51 @@ return {
         },
       }
 
+      local builtin = require("telescope.builtin")
+      local utils = require("telescope.utils")
+
       local function telescope_live_grep_open_files()
-        require('telescope.builtin').live_grep {
+        builtin.live_grep {
           grep_open_files = true,
           prompt_title = 'Live Grep in Open Files',
         }
       end
 
+      local function telescope_fuzzy_find()
+          -- You can pass additional configuration to telescope to change theme, layout, etc.
+          builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
+              winblend = 10,
+              previewer = false,
+          })
+      end
+
+      local function telescope_files_in_dir()
+          builtin.find_files({ cwd = utils.buffer_dir() })
+      end
+
       -- Enable telescope fzf native, if installed
       pcall(require('telescope').load_extension, 'fzf')
       Maps("<leader>", 'n', {
-        {'E', require('telescope.builtin').find_files, {desc = 'files in project'}},
+        {'E', builtin.find_files, {desc = 'files in project'}},
+        {'e', telescope_files_in_dir, { desc = "Find files in cwd" }},
+        {'x', builtin.commands},
         {
           's', {
             {'/', telescope_live_grep_open_files, { desc = '[S]earch [/] in Open Files' }},
-            {'s', require('telescope.builtin').builtin, { desc = '[S]earch [S]elect Telescope' }},
-            {'f', require('telescope.builtin').git_files, { desc = 'Search [G]it [F]iles' }},
-            {'h', require('telescope.builtin').help_tags, { desc = '[S]earch [H]elp' }},
-            {'w', require('telescope.builtin').grep_string, { desc = '[S]earch current [W]ord' }},
-            {'g', require('telescope.builtin').live_grep, { desc = '[S]earch by [G]rep' }},
+            {'s', builtin.builtin, { desc = '[S]earch [S]elect Telescope' }},
+            {'f', builtin.git_files, { desc = 'Search [G]it [F]iles' }},
+            {'h', builtin.help_tags, { desc = '[S]earch [H]elp' }},
+            {'w', builtin.grep_string, { desc = '[S]earch current [W]ord' }},
+            {'g', builtin.live_grep, { desc = '[S]earch by [G]rep' }},
             {'G', ':LiveGrepGitRoot<cr>', { desc = '[S]earch by [G]rep on Git Root' }},
-            {'d', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' }},
-            {'r', require('telescope.builtin').resume, { desc = '[S]earch [R]esume' }},
+            {'d', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' }},
+            {'r', builtin.resume, { desc = '[S]earch [R]esume' }},
           },
           { desc = 'search' }
         },
-        {'b', require('telescope.builtin').buffers, { desc = 'buffers'}}
+        {'b', builtin.buffers, { desc = 'buffers'}},
+        {'?', builtin.oldfiles, { desc = '[?] Find recently opened files' }},
+        {'/', telescope_fuzzy_find, { desc = '[/] Fuzzily search in current buffer' }},
       })
     end,
   }
